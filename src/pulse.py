@@ -4,13 +4,11 @@ Energy constant models an eye-safe system, whereas a peak power constant models 
 limit is instantaneous (not predetermined) for example for driver current limits, fibre nonlinearities, and diode limits.
 
 FWHM, \tau = 2*sqrt(2*ln(2))*\sigma
-        
-        
+          
 '''
 
 import numpy as np
 import matplotlib.pyplot as plt
-
 
 def gaussian_pulse(t, E, t0, sigma):
     """Gaussian optical pulse, energy-normalised.
@@ -33,12 +31,12 @@ t = np.linspace(-50e-9, 50e-9, 10001)
 P = gaussian_pulse(t, E=1e-6, t0=0, sigma=5e-9)
 print(np.trapz(P, t))
 
-
 plt.plot(t * 1e9, P)
 plt.xlabel("Time (ns)")
 plt.ylabel("P(t) (W)")
 plt.grid()
 plt.title("Gaussian pulse, E = 1 μJ, σ = 5 ns")
+plt.savefig("Gaussian pulse")
 plt.show()
 
 

@@ -91,6 +91,7 @@ def main():
     plt.grid(True, which="both")
     plt.legend()
     plt.tight_layout()
+    plt.savefig("figures/Attenuation comparison")
     plt.show()
 
 

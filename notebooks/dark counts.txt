@@ -1,0 +1,33 @@
+even in complete darkness, photodetector can produce pusles
+due to thermal energy inside semiconducotr excitin gelectrons across the bandgap, produce electron hole pairs
+They are also possion as they occur independently,
+average rate is constant, rare with short time scale
+
+Ndark ~ Possion(lamdark T)
+where lamdark is the dark count rate
+
+
+2 Background photons
+
+the background light produces a constant average arrivale rate of lambg
+and is also represented using Possion, it is dependent on aperture area, A_r, optical filter bandiwdth
+receiver fov, solar spectrial irradiance near 905nm and integration time They
+
+Thermal johnson noise,
+due to electrons in resistors creating random voltage fluctuations
+it is a continous electrical noise, its RMS voltage is 
+sigma_V = sqrt(4kTRB)
+where k is boltzmann, T is absoltute temp
+R is resistance
+B is bandiwdth
+This does not dependt on how many photons arrivale
+the sum of independent possion is poisson theregore
+
+Ntotal ~ Poission(mus +mud + mub)
+
+the variance is the sum of the mys, + the thermal variance
+
+as targets gets further away, the signal power behaves Pr propto 1/r^2
+but the other sources stay approximately constant, so as range increases, the signal term becomes smaller
+eventuall it becomes comparable to the noise floor, causing SNR to fall below level required floor floor
+reliable detection, setting a maximum usable detection range

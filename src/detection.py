@@ -150,6 +150,9 @@ def main():
 
     rng = np.random.default_rng(1)
 
+    true_detection_ranges = []
+    false_alarm_ranges = []
+
     for _ in range(n_shots):
         noise = rng.normal(
             loc=0.0,
@@ -168,9 +171,29 @@ def main():
             threshold_range = range_from_tof(threshold_t)
             threshold_ranges.append(threshold_range)
 
+            # A detection is considered true if it occurs within
+            # +/- 10 sigma_p of the expected pulse arrival.
+            if abs(threshold_t - true_tof) <= 10.0 * sigma_p:
+                true_detection_ranges.append(threshold_range)
+            else:
+                false_alarm_ranges.append(threshold_range)
+
 
         corr, lag_times = matched_filter(waveform, template, dt)
         k_hat = np.argmax(corr)
+
+        # Sub-sample peak interpolation:
+        # standard three-point parabolic-vertex formula (looked up).
+        y_minus = corr[k_hat - 1]
+        y_zero = corr[k_hat]
+        y_plus = corr[k_hat + 1]
+
+        denom = y_minus - 2.0 * y_zero + y_plus
+
+        if denom != 0.0:
+            delta = 0.5 * (y_minus - y_plus) / denom
+        else:
+            delta = 0.0
 
         # lag_times[k_hat] is the lag referenced to
         # template element 0. Add the template-centre
@@ -181,6 +204,7 @@ def main():
 
         matched_t = (
             lag_times[k_hat]
+            + delta * dt
             + template_centre_offset
         )
 
@@ -194,6 +218,43 @@ def main():
     matched_ranges = np.asarray(matched_ranges)
     matched_times = np.asarray(matched_times)
 
+    true_detection_ranges = np.asarray(true_detection_ranges)
+    false_alarm_ranges = np.asarray(false_alarm_ranges)
+    threshold_times = np.asarray(threshold_times)
+
+    print("\nThreshold detector:")
+    print(f"  true detections: {len(true_detection_ranges)}")
+    print(f"  false alarms:    {len(false_alarm_ranges)}")
+
+    if len(true_detection_ranges) > 1:
+        print(
+            f"  cluster mean:    "
+            f"{np.mean(true_detection_ranges):.4f} m"
+        )
+        print(
+            f"  cluster sigma_R: "
+            f"{np.std(true_detection_ranges, ddof=1):.4f} m"
+        )
+
+    print(
+        f"  FA rate:          "
+        f"{len(false_alarm_ranges) / n_shots:.4f}"
+    )
+
+    import matplotlib.pyplot as plt
+
+    plt.figure()
+    plt.hist(threshold_ranges, bins=80)
+    plt.axvline(
+        true_range,
+        linestyle="--",
+        label="true range",
+    )
+    plt.xlabel("Estimated range (m)")
+    plt.ylabel("Count")
+    plt.title("Threshold detections: true detections + false alarms")
+    plt.legend()
+    plt.show()
 
     print("\n--- Monte Carlo results ---")
 
@@ -237,9 +298,9 @@ def main():
         predicted_sigma_t
     )
 
-    measured_sigma_t = np.std(
-        threshold_times,
-        ddof=1,
+    measured_sigma_t = (
+        np.std(true_detection_ranges, ddof=1)
+        / (c / 2.0)
     )
 
     print("\nEdge-trigger prediction:")
@@ -258,3 +319,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

@@ -1,0 +1,260 @@
+import numpy as np
+from scipy.constants import c
+from scipy.special import erfcinv
+
+from pulse import gaussian_pulse
+
+def range_from_tof(t):
+    """
+    Convert one-way time of flight to range.
+
+    Parameters:
+    t: time (s)
+    """
+
+    return (c / 2.0) * t
+
+def matched_filter(waveform, template, dt):
+    """
+    Discrete matched filter and correlation
+
+    Returns
+    corr: ndarray
+        Full corellation output
+    lag_times : ndarray
+        Time corresponding to each correlation sample
+    
+    """
+
+    waveform = np.asarray(waveform)
+    template = np.asarray(template)
+
+    corr = np.correlate(waveform, template, mode = "full")
+
+    n = len(waveform)
+    m = len(template)
+
+    # For mode='full', correlation index k maps to
+    #
+    #     L = k - (m - 1)
+    #
+    # where L is the lag of template element 0.
+    #
+    # The template centre is at index (m - 1)/2, so when the
+    # pulse centre aligns with the template centre:
+    #
+    #     t_ToF = L*dt + ((m - 1)/2)*dt
+    #
+    # Here the template spans -5*sigma_p ... +5*sigma_p,
+    # so ((m - 1)/2)*dt = 5*sigma_p.
+    #
+    # Therefore, after finding k_hat:
+    #
+    #     L_hat = k_hat - (m - 1)
+    #     t_hat = L_hat*dt + ((m - 1)/2)*dt
+
+    lags = np.arange(-(m - 1), n) * dt
+    return corr, lags
+
+
+def threshold_detect(waveform, V, dt):
+    """
+    Returns the first threshold crossing time
+
+    Rturns None if never detects threshold cross
+    """
+    crossings = np.flatnonzero(waveform >= V)
+    if len(crossings) == 0:
+        return None
+    first = crossings[0]
+    return first * dt
+
+def main():
+
+    sigma_p = 10e-9
+    dt = 0.5e-9 #sampling
+
+
+    true_range = 100.0
+    true_tof = 2.0 * true_range / c
+
+    t_end = true_tof + 6.0 * sigma_p
+    t = np.arange(0.0, t_end, dt)
+
+    E = 1.0
+    clean_waveform = gaussian_pulse(
+        t,
+        t0=true_tof,
+        sigma=sigma_p,
+        E=E,
+    )
+
+    template_t = np.arange(
+        -5.0 * sigma_p,
+        5.0 * sigma_p + dt,
+        dt,
+    )
+
+    template = gaussian_pulse(
+        template_t,
+        t0=0.0,
+        sigma=sigma_p,
+        E=E,
+    )
+
+    P_peak = E / (sigma_p * np.sqrt(2.0 * np.pi))
+
+    target_SNR = 20.0
+
+    # SNR = P_peak / sigma_n
+    sigma_n = P_peak / target_SNR
+    M = len(t)
+
+    target_window_PFA = 1e-2
+
+    # Small-P approximation:
+    #     P_FA,window ~= M * P_FA,sample
+    # therefore
+    #     P_FA,sample ~= P_FA,window / M
+    per_sample_PFA = target_window_PFA / M
+
+    # P_FA = 1/2 erfc(k/sqrt(2))
+    # Therefore:
+    #     k = sqrt(2) * erfcinv(2 * P_FA)
+    k = np.sqrt(2.0) * erfcinv(2.0 * per_sample_PFA)
+
+    V = k * sigma_n
+
+    print("--- Simulation setup ---")
+    print(f"True range:              {true_range:.3f} m")
+    print(f"Pulse width sigma_p:     {sigma_p * 1e9:.2f} ns")
+    print(f"Sampling interval dt:    {dt * 1e9:.2f} ns")
+    print(f"Peak amplitude:          {P_peak:.6g}")
+    print(f"Target SNR:              {target_SNR:.1f}")
+    print(f"Noise sigma:             {sigma_n:.6g}")
+    print(f"Samples/window M:        {M}")
+    print(f"Target window P_FA:      {target_window_PFA:.3g}")
+    print(f"Per-sample P_FA:         {per_sample_PFA:.3g}")
+    print(f"Threshold k:             {k:.2f}")
+    print(f"Threshold V:             {V:.6g}")
+
+
+#-------------------------Monte Carlo-------------------------------
+
+    n_shots = 5000
+
+    threshold_ranges = []
+    threshold_times = []
+    matched_ranges = []
+    matched_times = []
+
+    rng = np.random.default_rng(1)
+
+    for _ in range(n_shots):
+        noise = rng.normal(
+            loc=0.0,
+            scale=sigma_n,
+            size=len(t),
+        )        
+
+        waveform = clean_waveform + noise
+
+
+        threshold_t = threshold_detect(waveform, V, dt)
+
+        if threshold_t is not None:
+            threshold_times.append(threshold_t)
+
+            threshold_range = range_from_tof(threshold_t)
+            threshold_ranges.append(threshold_range)
+
+
+        corr, lag_times = matched_filter(waveform, template, dt)
+        k_hat = np.argmax(corr)
+
+        # lag_times[k_hat] is the lag referenced to
+        # template element 0. Add the template-centre
+        # offset to obtain the pulse-centre ToF.
+        template_centre_offset = (
+            (len(template) - 1) / 2.0
+        ) * dt
+
+        matched_t = (
+            lag_times[k_hat]
+            + template_centre_offset
+        )
+
+        matched_times.append(matched_t)
+        matched_ranges.append(
+            range_from_tof(matched_t)
+        )
+    threshold_ranges = np.asarray(threshold_ranges)
+    threshold_times = np.asarray(threshold_times)
+
+    matched_ranges = np.asarray(matched_ranges)
+    matched_times = np.asarray(matched_times)
+
+
+    print("\n--- Monte Carlo results ---")
+
+    if len(threshold_ranges):
+        threshold_mean = np.mean(threshold_ranges)
+        threshold_std = np.std(
+            threshold_ranges,
+            ddof=1,
+        )
+
+        print("\nThreshold detector:")
+        print(f"  detections: {len(threshold_ranges)}/{n_shots}")
+        print(f"  mean range: {threshold_mean:.4f} m")
+        print(
+            f"  bias:       "
+            f"{threshold_mean - true_range:.4f} m"
+        )
+        print(f"  sigma_R:    {threshold_std:.4f} m")
+
+    matched_mean = np.mean(matched_ranges)
+    matched_std = np.std(
+        matched_ranges,
+        ddof=1,
+    )
+
+    print("\nMatched filter:")
+    print(f"  mean range: {matched_mean:.4f} m")
+    print(
+        f"  bias:       "
+        f"{matched_mean - true_range:.4f} m"
+    )
+    print(f"  sigma_R:    {matched_std:.4f} m")
+
+    predicted_sigma_t = (
+        np.sqrt(np.e)
+        * sigma_p
+        / target_SNR
+    )
+
+    predicted_sigma_R = range_from_tof(
+        predicted_sigma_t
+    )
+
+    measured_sigma_t = np.std(
+        threshold_times,
+        ddof=1,
+    )
+
+    print("\nEdge-trigger prediction:")
+    print(
+        f"  predicted sigma_t: "
+        f"{predicted_sigma_t * 1e9:.4f} ns"
+    )
+    print(
+        f"  measured sigma_t:  "
+        f"{measured_sigma_t * 1e9:.4f} ns"
+    )
+    print(
+        f"  predicted sigma_R: "
+        f"{predicted_sigma_R:.4f} m"
+    )
+
+if __name__ == "__main__":
+    main()

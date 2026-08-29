@@ -27,16 +27,19 @@ def gaussian_pulse(t, E, t0, sigma):
     """
     return (E / (sigma * np.sqrt(2 * np.pi))) * np.exp(-(t - t0)**2 / (2 * sigma**2))
 
-t = np.linspace(-50e-9, 50e-9, 10001)
-P = gaussian_pulse(t, E=1e-6, t0=0, sigma=5e-9)
-print(np.trapz(P, t))
 
-plt.plot(t * 1e9, P)
-plt.xlabel("Time (ns)")
-plt.ylabel("P(t) (W)")
-plt.grid()
-plt.title("Gaussian pulse, E = 1 μJ, σ = 5 ns")
-plt.savefig("Gaussian pulse")
-plt.show()
+
+if __name__ == "__main__":
+    t = np.linspace(-50e-9, 50e-9, 10001)
+    P = gaussian_pulse(t, E=1e-6, t0=0, sigma=5e-9)
+    print(np.trapz(P, t))
+
+    plt.plot(t * 1e9, P)
+    plt.xlabel("Time (ns)")
+    plt.ylabel("P(t) (W)")
+    plt.grid()
+    plt.title("Gaussian pulse, E = 1 μJ, σ = 5 ns")
+    plt.savefig("Gaussian pulse")
+    plt.show()
 
 

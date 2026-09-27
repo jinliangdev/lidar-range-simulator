@@ -6,7 +6,7 @@ from pulse import gaussian_pulse
 
 def range_from_tof(t):
     """
-    Convert one-way time of flight to range.
+    Convert one way time of flight to range.
 
     Parameters:
     t: time (s)
@@ -104,7 +104,7 @@ def main():
 
     P_peak = E / (sigma_p * np.sqrt(2.0 * np.pi))
 
-    target_SNR = 20.0
+    target_SNR = 20
 
     # SNR = P_peak / sigma_n
     sigma_n = P_peak / target_SNR
@@ -302,6 +302,43 @@ def main():
         np.std(true_detection_ranges, ddof=1)
         / (c / 2.0)
     )
+    signal_derivative = (
+        (t - true_tof)
+        / sigma_p**2
+        * clean_waveform
+    )
+
+    fisher_information = (
+        np.sum(signal_derivative**2)
+        / sigma_n**2
+    )
+
+    crlb_sigma_t = 1.0 / np.sqrt(fisher_information)
+
+    crlb_sigma_R = range_from_tof(
+        crlb_sigma_t
+    )
+
+    print("\nCramér-Rao lower bound:")
+    print(
+        f"  sigma_t:    "
+        f"{crlb_sigma_t * 1e9:.4f} ns"
+    )
+    print(
+        f"  sigma_R:    "
+        f"{crlb_sigma_R:.4f} m"
+    )
+
+    print("\nMatched filter / CRLB:")
+    print(
+        f"  ratio:      "
+        f"{matched_std / crlb_sigma_R:.3f}x"
+    )
+    print(
+        f"  trials:     "
+        f"{n_shots}"
+    )
+
 
     print("\nEdge-trigger prediction:")
     print(

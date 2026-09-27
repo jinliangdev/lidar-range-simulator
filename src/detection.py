@@ -104,7 +104,7 @@ def main():
 
     P_peak = E / (sigma_p * np.sqrt(2.0 * np.pi))
 
-    target_SNR = 20
+    target_SNR = 100.0
 
     # SNR = P_peak / sigma_n
     sigma_n = P_peak / target_SNR
@@ -125,6 +125,7 @@ def main():
 
     V = k * sigma_n
 
+
     print("--- Simulation setup ---")
     print(f"True range:              {true_range:.3f} m")
     print(f"Pulse width sigma_p:     {sigma_p * 1e9:.2f} ns")
@@ -135,7 +136,7 @@ def main():
     print(f"Samples/window M:        {M}")
     print(f"Target window P_FA:      {target_window_PFA:.3g}")
     print(f"Per-sample P_FA:         {per_sample_PFA:.3g}")
-    print(f"Threshold k:             {k:.2f}")
+    print(f"Threshold k:             {V / sigma_n:.2f}")
     print(f"Threshold V:             {V:.6g}")
 
 
@@ -222,7 +223,7 @@ def main():
     false_alarm_ranges = np.asarray(false_alarm_ranges)
     threshold_times = np.asarray(threshold_times)
 
-    print("\nThreshold detector:")
+    print("\nThreshold detector (true detections vs false alarms):")
     print(f"  true detections: {len(true_detection_ranges)}")
     print(f"  false alarms:    {len(false_alarm_ranges)}")
 
@@ -265,7 +266,7 @@ def main():
             ddof=1,
         )
 
-        print("\nThreshold detector:")
+        print("\nThreshold detector (all detections, including false alarms):")
         print(f"  detections: {len(threshold_ranges)}/{n_shots}")
         print(f"  mean range: {threshold_mean:.4f} m")
         print(
@@ -281,27 +282,23 @@ def main():
     )
 
     print("\nMatched filter:")
-    print(f"  mean range: {matched_mean:.4f} m")
-    print(
-        f"  bias:       "
-        f"{matched_mean - true_range:.4f} m"
-    )
-    print(f"  sigma_R:    {matched_std:.4f} m")
+    matched_bias_mm = (matched_mean - true_range) * 1e3
+    matched_se_mm = matched_std / np.sqrt(n_shots) * 1e3
 
-    predicted_sigma_t = (
-        np.sqrt(np.e)
-        * sigma_p
-        / target_SNR
-    )
+    print("\nMatched filter:")
+    print(f"  mean range: {matched_mean:.4f} m")
+    print(f"  bias:       {matched_bias_mm:.2f} ± {matched_se_mm:.2f} mm")
+    print(f"  sigma_R:    {matched_std * 1e3:.2f} mm")
+
+    u = np.sqrt(2.0 * np.log(P_peak / V))
+    predicted_sigma_t = np.sqrt((sigma_p / (target_SNR * u * np.exp(-u**2 / 2.0)))**2 + dt**2 / 12.0)
 
     predicted_sigma_R = range_from_tof(
-        predicted_sigma_t
-    )
+        predicted_sigma_t)
 
     measured_sigma_t = (
         np.std(true_detection_ranges, ddof=1)
-        / (c / 2.0)
-    )
+        / (c / 2.0) )
     signal_derivative = (
         (t - true_tof)
         / sigma_p**2

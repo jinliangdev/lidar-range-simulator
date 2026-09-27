@@ -49,22 +49,22 @@ $$
 
 where 
 
-$P_t$ — transmitted optical power
+- $P_t$ — transmitted optical power
 
-r — target range
+- r — target range
 
-$\rho$ — target reflectivity
+- $\rho$ — target reflectivity
 
-$A_r$ — receiver aperture area
+- $A_r$ — receiver aperture area
 
-$\eta_r$ — receiver optical efficiency
+- $\eta_r$ — receiver optical efficiency
 
-$\alpha$ — atmospheric extinction coefficient
+- $\alpha$ — atmospheric extinction coefficient
 
 With the inverse square law representing geometric spreading through returned radiation, and the $e^{-2\alpha r}$ term representing atmospheric attenuation on both outward and inward paths.
 
 Without atmospheric attenuation, the simulator numerically verifies that
-$P_r\propto r^{-2}$. However, this is only valid when the beam lies entirely on the target, a subfootprint target would give $\propto r^{-4}$
+$P_r\propto r^{-2}$. However, this is only valid when the beam lies entirely on the target, a target smaller than the beam footprint would give $\propto r^{-4}$
 
 ## 3. Detector noise — `src/noise.py`
 The detector module uses independent photon counting and electronic noise sources
@@ -73,7 +73,7 @@ The detector module uses independent photon counting and electronic noise source
 The expected number of detected signal photons $$\mu_s = \eta_q E_r \lambda/hc$$
 all $\mu$ per time bin ($\sigma_{th}$ in photoelectrons).
 
-The detected signal however contain dark counts and background photons, which are treated as independent Poissonian events.
+The detected signal however contains dark counts and background photons, which are treated as independent Poissonian events.
 $$N_{\mathrm{photon}}
 \sim
 \mathrm{Poisson}
@@ -124,7 +124,7 @@ $$\sigma_t
 $$\sigma_t = \frac{\sigma_p}{\text{SNR}\,u\,e^{-u^2/2}}, \qquad u=\sqrt{2\ln(A/V)}$$
 Note that $u=1$ gives $\sqrt{e}\,\sigma_p/\text{SNR}$.
 
-Although a fixed threshold gives a bias dependent on amplitude, and therefore range, this intial estimation allows for an analytical comparison for the Monte Carlo simulation.
+Although a fixed threshold gives a bias dependent on amplitude, and therefore range, this inital estimation allows for an analytical comparison for the Monte Carlo simulation.
 ### Matched filtering
 
 The second estimator correlates the received waveform with a known pulse template.

@@ -1,5 +1,9 @@
 # LiDAR Range Simulator
 
+## Status
+
+The detection module uses additive Gaussian noise modelling, and Poisson modelling.
+Outstanding work to do are parameter sweeps.
 
 ## Motivation
 
@@ -12,7 +16,7 @@ The optical pulse generation uses an energy normalised Gaussian laser pulse. The
 This project uses Monte Carlo trials to compare analytical timing jitter limits and the Cramér-Rao lower bound. 
 
 ## Key Result
-At SNR = 20, σ_p = 10 ns, and Δt = 0.5 ns, the matched filter achieved a 17.8mm range precision $\sigma_R$, which is 1.002 $\pm$ 0.010 $\times$ the CRLB over N = 5000 Monte Carlo trials. This has a bias of 0.3 $\pm$ 0.25mm in comparison to the fixed-threshold detector with approximately 2.8m of bias and a 22$\times$ larger detection jitter.
+At SNR = 20, σ_p = 10 ns, and Δt = 0.5 ns, the matched filter achieved a 17.8mm range precision $\sigma_R$, which is 1.002 $\pm$ 0.010 $\times$ the CRLB over N = 5000 Monte Carlo trials. This has a bias of 0.3 $\pm$ 0.25mm in comparison to the fixed threshold detector with approximately 2.8m of bias and a 22$\times$ larger detection jitter.
 
 
 ## Overview
@@ -21,7 +25,7 @@ The simulator is organised through four modules deliberately separated so the si
 
 - `src/pulse.py` Gaussian pulse model
 - `src/propagation.py` Propagation module
-- `src/noise.py` Shot, dark-count, background and thermal noise
+- `src/noise.py` Shot, dark count, background and thermal noise
 - `src/detection.py` Detection module with range estimation
 
 ## 1. Pulse model — `src/pulse.py`
@@ -70,8 +74,7 @@ $P_r\propto r^{-2}$. However, this is only valid when the beam lies entirely on 
 The detector module uses independent photon counting and electronic noise sources
 
 ### Photon statistics
-The expected number of detected signal photons $$\mu_s = \eta_q E_r \lambda/hc$$
-all $\mu$ per time bin ($\sigma_{th}$ in photoelectrons).
+The expected number of detected signal photons $$\mu_s = \eta_q E_r \lambda/hc$$ and all means are counts per time bin, and $\sigma_{th}$ is in photoelectron units.
 
 The detected signal however contains dark counts and background photons, which are treated as independent Poissonian events.
 $$N_{\mathrm{photon}}
@@ -136,7 +139,7 @@ $\arg\max_k (y[k])$
 and the CRLB on arrival time is 
 $$\sigma_t = \frac{\sigma_p}{\text{SNR}}\sqrt{\frac{2\,\Delta t}{\sqrt{\pi}\,\sigma_p}}$$
 
-This technique depends on the whole wave shape, not just a local slope which is efficient (attaining the CRLB) for known shape pulses in the presence of Gaussian noise, approximately so when signal-dependent shot noise dominates.
+This technique depends on the whole wave shape, not just a local slope which is efficient (attaining the CRLB) for known shape pulses in the presence of Gaussian noise, approximately so when signal dependent shot noise dominates.
 
 
 

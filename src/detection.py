@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.constants import c
 from scipy.special import erfcinv
-
+import matplotlib.pyplot as plt
 from pulse import gaussian_pulse
 
 def range_from_tof(t):
@@ -104,7 +104,7 @@ def main():
 
     P_peak = E / (sigma_p * np.sqrt(2.0 * np.pi))
 
-    target_SNR = 100.0
+    target_SNR = 20
 
     # SNR = P_peak / sigma_n
     sigma_n = P_peak / target_SNR
@@ -214,8 +214,6 @@ def main():
             range_from_tof(matched_t)
         )
     threshold_ranges = np.asarray(threshold_ranges)
-    threshold_times = np.asarray(threshold_times)
-
     matched_ranges = np.asarray(matched_ranges)
     matched_times = np.asarray(matched_times)
 
@@ -242,7 +240,6 @@ def main():
         f"{len(false_alarm_ranges) / n_shots:.4f}"
     )
 
-    import matplotlib.pyplot as plt
 
     plt.figure()
     plt.hist(threshold_ranges, bins=80)
@@ -281,7 +278,6 @@ def main():
         ddof=1,
     )
 
-    print("\nMatched filter:")
     matched_bias_mm = (matched_mean - true_range) * 1e3
     matched_se_mm = matched_std / np.sqrt(n_shots) * 1e3
 

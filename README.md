@@ -27,7 +27,7 @@ The simulator is organised through four modules deliberately separated so the si
 
 - `src/pulse.py` Gaussian pulse model
 - `src/propagation.py` 	Radiometric link budget — Lambertian target, geometric spreading, Beer–Lambert attenuation
-- `src/noise.py` Shot, dark count, background (Poission), and thermal (Gaussian) noise with a Monte Carlo check of each component.
+- `src/noise.py` Shot, dark count, background (Poisson), and thermal (Gaussian) noise with a Monte Carlo check of each component.
 - `src/detection.py` Threshold and matched filter estimation with a Monte Carlo benchmark and CRLB comparison.
 
 ## 1. Pulse model — `src/pulse.py`
@@ -129,7 +129,7 @@ $$\sigma_t
 $$\sigma_t = \frac{\sigma_p}{\text{SNR}\,u\,e^{-u^2/2}}, \qquad u=\sqrt{2\ln(A/V)}$$
 Note that $u=1$ gives $\sqrt{e}\,\sigma_p/\text{SNR}$.
 
-Although a fixed threshold gives a bias dependent on amplitude, and therefore range, this inital estimation allows for an analytical comparison for the Monte Carlo simulation.
+Although a fixed threshold gives a bias dependent on amplitude, and therefore range, this initial estimation allows for an analytical comparison for the Monte Carlo simulation.
 ### Matched filtering
 
 The second estimator correlates the received waveform with a known pulse template.
@@ -146,6 +146,8 @@ This technique depends on the whole wave shape, not just a local slope which is 
 ## Status
 This is an actively developed independent project and the core physics and main results are complete and reproducible. The below items are planned extensions to this project
 
+Include the full Poisson detector chain from the noise mdule into the estimator benchmark in the detection module. This allow for a comparison beyond the Gaussian dominated regime.
+
 Parameter sweeping for
 SNR vs range,
 ,pulse width vs range resolution, and
@@ -157,6 +159,6 @@ Hardware validation using electronic components for a crude measurement to compa
 
 ## Requirements
 
-Python 3.10, with numpy, scipy, matplotlib (see requirements.txt)
+Python 3.10+, with numpy, scipy, matplotlib (see requirements.txt)
 
 

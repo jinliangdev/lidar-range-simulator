@@ -1,32 +1,34 @@
-# LiDAR Range Simulator
-
-## Status
-
-The detection module uses additive Gaussian noise modelling, and Poisson modelling.
-Outstanding work to do are parameter sweeps.
+# Pulsed LiDAR Range Simulator
+A modular Python simulator to study the limits of pulsed time of flight LiDAR ranging. This simulator attempts to characterise the arrival time of a noisy optical return to a degree of accuracy using underlying physics and statistics.
 
 ## Motivation
 
 The aim of the project is not simply to simulate whether a LiDAR pulse can be detected. It is to investigate **how accurately the arrival time can fundamentally be estimated from a noisy optical return**, and how that precision follows from the underlying physics and statistics.
 
 ## Introduction
-This repository is a simulator for investigating the limits of a pulsed LiDAR range estimation, using optical pulse generation, atmospheric/target propagation, detector noise, and flight time estimation.
-
 The optical pulse generation uses an energy normalised Gaussian laser pulse. The atmospheric/target propagation uses a Lambertian target with geometric spreading and atmospheric extinction. The signal, dark counts, and background noise are Poisson, thermal/electrical noise is Gaussian, and the range estimation is done through threshold detection and matched filtering.
 This project uses Monte Carlo trials to compare analytical timing jitter limits and the Cramér-Rao lower bound. 
 
 ## Key Result
 At SNR = 20, σ_p = 10 ns, and Δt = 0.5 ns, the matched filter achieved a 17.8mm range precision $\sigma_R$, which is 1.002 $\pm$ 0.010 $\times$ the CRLB over N = 5000 Monte Carlo trials. This has a bias of 0.3 $\pm$ 0.25mm in comparison to the fixed threshold detector with approximately 2.8m of bias and a 22$\times$ larger detection jitter.
 
+In other words, this means that the matched filter is statistically efficient. It extracts all the timing information the physics allows whilst the simple threshold detector only focuses on a clipped amount.
 
-## Overview
+To reproduce these results:
+
+pip install -r requirements.txt
+cd src
+python detection.py
+
+
+## Repository structure
 
 The simulator is organised through four modules deliberately separated so the signal, propagation loss, detector statistics, and estimation can be developed and tested independently.
 
 - `src/pulse.py` Gaussian pulse model
-- `src/propagation.py` Propagation module
-- `src/noise.py` Shot, dark count, background and thermal noise
-- `src/detection.py` Detection module with range estimation
+- `src/propagation.py` 	Radiometric link budget — Lambertian target, geometric spreading, Beer–Lambert attenuation
+- `src/noise.py` Shot, dark count, background (Poission), and thermal (Gaussian) noise with a Monte Carlo check of each component.
+- `src/detection.py` Threshold and matched filter estimation with a Monte Carlo benchmark and CRLB comparison.
 
 ## 1. Pulse model — `src/pulse.py`
 
@@ -141,5 +143,20 @@ $$\sigma_t = \frac{\sigma_p}{\text{SNR}}\sqrt{\frac{2\,\Delta t}{\sqrt{\pi}\,\si
 
 This technique depends on the whole wave shape, not just a local slope which is efficient (attaining the CRLB) for known shape pulses in the presence of Gaussian noise, approximately so when signal dependent shot noise dominates.
 
+## Status
+This is an actively developed independent project and the core physics and main results are complete and reproducible. The below items are planned extensions to this project
+
+Parameter sweeping for
+SNR vs range,
+,pulse width vs range resolution, and
+background limited max range to test the performance of this simulator
+
+Writeup for this project
+
+Hardware validation using electronic components for a crude measurement to compare against simulation.
+
+## Requirements
+
+Python 3.10, with numpy, scipy, matplotlib (see requirements.txt)
 
 
